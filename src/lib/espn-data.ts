@@ -389,6 +389,38 @@ export async function fetchAllPlayersForGames(games: Game[]): Promise<EnhancedPl
 }
 
 /**
+ * Fetch team injuries from ESPN
+ */
+async function fetchTeamInjuries(teamId: string): Promise<Map<string, string>> {
+  const injuries = new Map<string, string>();
+  
+  try {
+    const url = `${ESPN_BASE}/teams/${teamId}/injuries`;
+    const response = await fetch(url, {
+      next: { revalidate: 1800 }, // Cache for 30 minutes
+      headers: { 'Accept': 'application/json' }
+    });
+    
+    if (!response.ok) return injuries;
+    
+    const data = await response.json();
+    const items = data.items || data.injuries || [];
+    
+    for (const item of items) {
+      const playerId = item.athlete?.id || item.id;
+      const status = item.status || item.type?.description || 'Unknown';
+      if (playerId) {
+        injuries.set(playerId, status);
+      }
+    }
+  } catch (error) {
+    console.error(`Error fetching injuries for team ${teamId}:`, error);
+  }
+  
+  return injuries;
+}
+
+/**
  * Quick fetch - gets games and uses estimated stats (faster, less API calls)
  */
 export async function quickFetchPlayers(games: Game[]): Promise<EnhancedPlayerData[]> {
@@ -416,9 +448,19 @@ export async function quickFetchPlayers(games: Game[]): Promise<EnhancedPlayerDa
         const athletes = data.athletes || [];
         const teamInfo = data.team || {};
         
+        // Also fetch injuries for this team
+        const injuries = await fetchTeamInjuries(teamId);
+        
         const isHome = teamId === game.home_team_id;
         
         for (const athlete of athletes) {
+          // Check if player is injured/out
+          const injuryStatus = injuries.get(athlete.id);
+          if (injuryStatus === 'Out' || injuryStatus === 'Injured Reserve') {
+            console.log(`Skipping ${athlete.fullName} - ${injuryStatus}`);
+            continue; // Skip injured players
+          }
+          
           // Parse stats from roster response
           const parsedStats = parseAthleteStats(athlete);
           
@@ -437,7 +479,8 @@ export async function quickFetchPlayers(games: Game[]): Promise<EnhancedPlayerDa
             topg: parsedStats.topg ?? 0,
           };
           
-          if (stats.mpg < 10) continue; // Skip low-minute players
+          // Skip players with 0 games or very low minutes
+          if (stats.games_played === 0 || stats.mpg < 10) continue;
           
           const praAvg = stats.ppg + stats.rpg + stats.apg;
           
@@ -476,7 +519,7 @@ export async function quickFetchPlayers(games: Game[]): Promise<EnhancedPlayerDa
             std_dev_pra: Math.round(praAvg * 0.12 * 10) / 10,
             usage_rate: Math.min(35, Math.max(15, (stats.ppg / 1.2) + (stats.apg * 0.8))),
             triple_doubles: estimateTripleDoubles(stats),
-            injury_status: null,
+            injury_status: injuryStatus || null,
           });
         }
         

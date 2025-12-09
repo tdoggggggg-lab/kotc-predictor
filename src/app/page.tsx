@@ -294,8 +294,8 @@ export default function Home() {
                 </span>
                 <span className="text-gray-400">
                   {modelVersion === 'v2' 
-                    ? 'Non-linear ML scoring with feature interactions'
-                    : 'Weighted scoring model (5 factors)'
+                    ? '🎯 Game Context Focus: High O/U, close games, hot streaks'
+                    : '📊 Stats Focus: Raw PRA, usage rate, ceiling potential'
                   }
                 </span>
               </div>
@@ -456,6 +456,42 @@ export default function Home() {
                   Click players below to compare (max 3)
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Mock Data Warning Banner */}
+      {data?.using_mock_data && (
+        <div className="bg-amber-500/20 border-y border-amber-500/50">
+          <div className="max-w-7xl mx-auto px-4 py-3">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">⚠️</span>
+              <div>
+                <p className="text-amber-400 font-semibold">Demo Mode - Using Sample Data</p>
+                <p className="text-amber-400/70 text-sm">
+                  {data.data_source === 'mock (no games)' 
+                    ? 'No NBA games scheduled for this date. Showing sample predictions.'
+                    : 'Live ESPN data unavailable. Showing sample predictions for demonstration.'}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Live Data Indicator */}
+      {data && !data.using_mock_data && (
+        <div className="bg-emerald-500/10 border-y border-emerald-500/30">
+          <div className="max-w-7xl mx-auto px-4 py-2">
+            <div className="flex items-center gap-2">
+              <span className="relative flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+              </span>
+              <span className="text-emerald-400 text-sm font-medium">
+                Live Data from ESPN • {data.num_players} players from {data.num_games} games
+              </span>
             </div>
           </div>
         </div>
