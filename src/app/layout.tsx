@@ -1,21 +1,14 @@
-import type { Metadata } from "next";
-import "./globals.css";
+import './globals.css';
 
-export const metadata: Metadata = {
-  title: "King of the Court Predictor",
-  description: "DraftKings NBA PRA prediction model for King of the Court contest",
+export const metadata = {
+  title: 'KOTC Predictor',
+  description: 'DraftKings King of the Court predictions',
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className="antialiased">
-        {children}
-      </body>
+      <body>{children}</body>
     </html>
   );
 }
